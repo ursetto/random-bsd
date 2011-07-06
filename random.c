@@ -31,16 +31,18 @@
 static char sccsid[] = "@(#)random.c	8.2 (Berkeley) 5/19/95";
 #endif /* LIBC_SCCS and not lint */
 #include <sys/cdefs.h>
+/*
 __FBSDID("$FreeBSD: src/lib/libc/stdlib/random.c,v 1.25.14.1 2010/12/21 17:10:29 kensmith Exp $");
+*/
 
-#include "namespace.h"
 #include <sys/time.h>          /* for srandomdev() */
 #include <fcntl.h>             /* for srandomdev() */
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>            /* for srandomdev() */
-#include "un-namespace.h"
+
+#include "random.h"
 
 /*
  * random.c:
@@ -264,7 +266,7 @@ static inline uint32_t good_rand (x)
  * for default usage relies on values produced by this routine.
  */
 void
-srandom(x)
+freebsd_srandom(x)
 	unsigned long x;
 {
 	int i, lim;
@@ -280,7 +282,7 @@ srandom(x)
 		lim = 10 * rand_deg;
 	}
 	for (i = 0; i < lim; i++)
-		(void)random();
+		(void)freebsd_random();
 }
 
 /*
@@ -295,7 +297,7 @@ srandom(x)
  * a fixed seed.
  */
 void
-srandomdev()
+freebsd_srandomdev()
 {
 	int fd, done;
 	size_t len;
@@ -306,11 +308,11 @@ srandomdev()
 		len = rand_deg * sizeof state[0];
 
 	done = 0;
-	fd = _open("/dev/random", O_RDONLY, 0);
+	fd = open("/dev/random", O_RDONLY, 0);
 	if (fd >= 0) {
-		if (_read(fd, (void *) state, len) == (ssize_t) len)
+		if (read(fd, (void *) state, len) == (ssize_t) len)
 			done = 1;
-		_close(fd);
+		close(fd);
 	}
 
 	if (!done) {
@@ -318,7 +320,7 @@ srandomdev()
 		unsigned long junk;
 
 		gettimeofday(&tv, NULL);
-		srandom((getpid() << 16) ^ tv.tv_sec ^ tv.tv_usec ^ junk);
+		freebsd_srandom((getpid() << 16) ^ tv.tv_sec ^ tv.tv_usec ^ junk);
 		return;
 	}
 
@@ -352,7 +354,7 @@ srandomdev()
  * complain about mis-alignment, but you should disregard these messages.
  */
 char *
-initstate(seed, arg_state, n)
+freebsd_initstate(seed, arg_state, n)
 	unsigned long seed;		/* seed for R.N.G. */
 	char *arg_state;		/* pointer to state array */
 	long n;				/* # bytes of state info */
@@ -392,7 +394,7 @@ initstate(seed, arg_state, n)
 	}
 	state = int_arg_state + 1; /* first location */
 	end_ptr = &state[rand_deg];	/* must set end_ptr before srandom */
-	srandom(seed);
+	freebsd_srandom(seed);
 	if (rand_type == TYPE_0)
 		int_arg_state[0] = rand_type;
 	else
@@ -420,7 +422,7 @@ initstate(seed, arg_state, n)
  * complain about mis-alignment, but you should disregard these messages.
  */
 char *
-setstate(arg_state)
+freebsd_setstate(arg_state)
 	char *arg_state;		/* pointer to state array */
 {
 	uint32_t *new_state = (uint32_t *)arg_state;
@@ -473,7 +475,7 @@ setstate(arg_state)
  * Returns a 31-bit random number.
  */
 long
-random()
+freebsd_random()
 {
 	uint32_t i;
 	uint32_t *f, *r;
