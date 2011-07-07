@@ -21,17 +21,23 @@
   (foreign-lambda* double ()
     "return(freebsd_random() / (RAND_MAX + 1.0));"))
 
-(define random
-  (foreign-lambda* number ((number n))  ;; NB: we can't avoid unnecessary modf() in number return conversion
-    "return(trunc(n * (freebsd_random() / (RAND_MAX + 1.0))));"))
-
 ;; % might be ok too
 (foreign-declare "#define fxrandom(n) C_fix((C_unfix(n) * (freebsd_random() / (RAND_MAX + 1.0))))")
 
-;; behave like core random: only allow exact input; return garbage for exact input > 2^31 (??)
+;; Only allow exact input, like core random; however, full fixnum
+;; range is permitted here on 64 bit platforms (still with 31-bit precision).
+;; Note that as 2^30 is invalid on 32-bit, the range is 0..2^30-2 there.
+;; This might hint that fxrand should return 0..2^30-1.
 (define (fxrandom n)
   (##sys#check-exact n 'fxrandom)
   (##core#inline "fxrandom" n))
+
+;; Allow use of full 31-bit precision on 32-bit systems with up to a 52-bit range,
+;; as this accepts and returns flonums.  On 64-bit this is worse than fxrandom so
+;; that could theoretically be called directly (might need feature-test egg).
+(define random
+  (foreign-lambda* number ((number n))  ;; NB: we can't avoid unnecessary modf() in number return conversion
+    "return(trunc(n * (freebsd_random() / (RAND_MAX + 1.0))));"))
 
 ;; fxrand disabled.  On 64-bit system we can use entire 31-bit
 ;; precision, but on 32-bit system we get undefined behavior
