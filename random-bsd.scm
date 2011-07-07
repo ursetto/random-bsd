@@ -45,7 +45,7 @@ EOF
 ;; Note that as 2^30 is invalid on 32-bit, the range is 0..2^30-2 there.
 ;; This might hint that fxrand should return 0..2^30-1.
 (define (random-fixnum n)
-  (##sys#check-exact n 'fxrandom)
+  (##sys#check-exact n 'random-fixnum)
   (##core#inline "fxrandom" n))
 
 ;; Allow use of full 31-bit precision on 32-bit systems with up to a 52-bit range,
