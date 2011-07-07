@@ -30,7 +30,7 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)random.c	8.2 (Berkeley) 5/19/95";
 #endif /* LIBC_SCCS and not lint */
-#include <sys/cdefs.h>
+/* #include <sys/cdefs.h> */
 /*
 __FBSDID("$FreeBSD: src/lib/libc/stdlib/random.c,v 1.25.14.1 2010/12/21 17:10:29 kensmith Exp $");
 */
