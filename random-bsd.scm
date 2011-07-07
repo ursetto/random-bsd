@@ -1,4 +1,6 @@
-(module bsd-random
+;; fixme: possible change: prefix everything with bsd- by default
+;; fixme: possible change: bsd-random -> random-bsd
+(module random-bsd
 (randomize random-integer random-fixnum
            fprand
            ;; fxrand
