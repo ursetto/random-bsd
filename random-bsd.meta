@@ -1,0 +1,6 @@
+;;;; -*- Hen -*-
+
+((license "BSD")
+ (category data)
+ (author "Jim Ursetto")
+ (synopsis "FreeBSD random number generator"))

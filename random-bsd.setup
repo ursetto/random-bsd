@@ -1,0 +1,8 @@
+;; -*- scheme -*-
+
+(compile -s -O2 -d1 random-bsd.scm random.c -J)
+(compile -s -O2 -d0 random-bsd.import.scm)
+(install-extension
+ 'random-bsd
+ '("random-bsd.so" "random-bsd.import.so")
+ '((version "0.1")))
