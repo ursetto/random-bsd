@@ -8,6 +8,7 @@
 
 (foreign-declare "#include \"random.h\"")
 (foreign-declare "#define BSD_RAND_MAX 2147483647")
+(foreign-declare "#include <sys/time.h>")
 
 (define _srandomdev
   (foreign-lambda void "freebsd_srandomdev"))
