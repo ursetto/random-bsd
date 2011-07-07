@@ -1,8 +1,9 @@
 ;; fixme: possible change: prefix everything with bsd- by default
-;; fixme: possible change: bsd-random -> random-bsd
+;; fixme: possible: fprand -> random-real
 (module random-bsd
-(randomize random-integer random-fixnum
-           fprand
+(randomize randomize/device
+ random-integer random-fixnum
+ fprand
            ;; fxrand
            )
 
@@ -14,12 +15,24 @@
 (define _srandomdev
   (foreign-lambda void "freebsd_srandomdev"))
 (define _srandom
-  (foreign-lambda void "freebsd_srandom" long))
+  (foreign-lambda void "freebsd_srandom" long))  ;; warning: arg type is unsigned long, then cast to uint32
+
+(define _spseudorandom
+  (foreign-lambda* void () #<<EOF
+    struct timeval tv;
+    unsigned long junk;
+    C_gettimeofday(&tv, NULL);
+    freebsd_srandom((C_getpid() << 16) ^ tv.tv_sec ^ tv.tv_usec ^ junk);
+EOF
+))
 
 (define (randomize #!optional seed)
   (if seed
       (_srandom seed)
-      (_srandomdev)))
+      (_spseudorandom)))
+
+(define (randomize/device)
+  (_srandomdev))
 
 (define fprand
   (foreign-lambda* double ()
