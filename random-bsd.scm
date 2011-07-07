@@ -1,9 +1,6 @@
-;; fixme: possible change: prefix everything with bsd- by default
-;; fixme: possible: fprand -> random-real
 (module random-bsd
 (randomize randomize/device
- random-integer random-fixnum
- fprand
+ random-integer random-fixnum random-real
            ;; fxrand
            )
 
@@ -37,6 +34,7 @@ EOF
 (define fprand
   (foreign-lambda* double ()
     "return(freebsd_random() / (BSD_RAND_MAX + 1.0));"))
+(define random-real fprand)
 
 ;; % might be ok too
 (foreign-declare "#define fxrandom(n) C_fix((C_unfix(n) * (freebsd_random() / (BSD_RAND_MAX + 1.0))))")
