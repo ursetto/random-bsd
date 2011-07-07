@@ -9,6 +9,7 @@
 (import scheme chicken foreign)
 
 (foreign-declare "#include \"random.h\"")
+(foreign-declare "#define BSD_RAND_MAX 2147483647")
 
 (define _srandomdev
   (foreign-lambda void "freebsd_srandomdev"))
@@ -22,10 +23,10 @@
 
 (define fprand
   (foreign-lambda* double ()
-    "return(freebsd_random() / (RAND_MAX + 1.0));"))
+    "return(freebsd_random() / (BSD_RAND_MAX + 1.0));"))
 
 ;; % might be ok too
-(foreign-declare "#define fxrandom(n) C_fix((C_unfix(n) * (freebsd_random() / (RAND_MAX + 1.0))))")
+(foreign-declare "#define fxrandom(n) C_fix((C_unfix(n) * (freebsd_random() / (BSD_RAND_MAX + 1.0))))")
 
 ;; Only allow exact input, like core random; however, full fixnum
 ;; range is permitted here on 64 bit platforms (still with 31-bit precision).
@@ -40,7 +41,7 @@
 ;; that could theoretically be called directly (might need feature-test egg).
 (define random-integer
   (foreign-lambda* number ((number n))  ;; NB: we can't avoid unnecessary modf() in number return conversion
-    "return(trunc(n * (freebsd_random() / (RAND_MAX + 1.0))));"))
+    "return(trunc(n * (freebsd_random() / (BSD_RAND_MAX + 1.0))));"))
 
 ;; fxrand disabled.  On 64-bit system we can use entire 31-bit
 ;; precision, but on 32-bit system we get undefined behavior
