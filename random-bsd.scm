@@ -4,8 +4,9 @@
 (module random-bsd
 (randomize randomize/device
  random-integer random-fixnum random-real
-           ;; fxrand
-           )
+ random    ;; mapped to random-fixnum
+ ;; fxrand
+ )
 
 (import scheme chicken foreign)
 
@@ -53,6 +54,7 @@ EOF
 (define (random-fixnum n)
   (##sys#check-exact n 'random-fixnum)
   (##core#inline "fxrandom" n))
+(define random random-fixnum)
 
 ;; Allow use of full 31-bit precision on 32-bit systems with up to a 52-bit range,
 ;; as this accepts and returns flonums.  On 64-bit this is worse than fxrandom so
