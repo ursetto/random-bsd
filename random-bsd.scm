@@ -1,3 +1,6 @@
+;; random-bsd extension for Chicken
+;; Copyright (c) 2011 Ursetto Consulting, Inc.  See LICENSE for details.
+
 (module random-bsd
 (randomize randomize/device
  random-integer random-fixnum random-real
@@ -15,6 +18,9 @@
 (define _srandom
   (foreign-lambda void "freebsd_srandom" long))  ;; warning: arg type is unsigned long, then cast to uint32
 
+;; Seed with pid and current time w/o reading from /dev/random like srandomdev().
+;; It may however be ok to read from /dev/urandom; whether to use this data as the
+;; seed or the full state (as in srandomdev) is unknown.
 (define _spseudorandom
   (foreign-lambda* void () #<<EOF
     struct timeval tv;
