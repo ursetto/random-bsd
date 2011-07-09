@@ -45,11 +45,10 @@ EOF
   (foreign-lambda* double () #<<EOF
     C_s64 L = ((C_s64)freebsd_random() << 31) | (C_s64)freebsd_random();
     L &= 0x1fffffffffffffLL;        /* in theory we should use INT64_C(0x...) */
-
 #ifdef DEBUG_RAND
     double d = L / 9007199254740992.0;
-    printf("%016llx %20lld\n", L, L);
-    printf("%016llx %20lld\n", *(C_s64 *)(&d), (C_s64)(d*9007199254740992.0));
+    printf("%08x%08x %lld\n", (int)(L>>32), (int)L, L);
+    printf("%08x%08x %.16g\n", (int)((*(C_s64 *)(&d))>>32), (int)(*(C_s64 *)(&d)), (d*9007199254740992.0));
 #endif
     return(L / 9007199254740992.0);
 EOF
