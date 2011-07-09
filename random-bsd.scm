@@ -39,13 +39,29 @@ EOF
 (define (randomize/device)
   (_srandomdev))
 
+;; Return random flonum in range [0.0,1.0).  The resulting double is populated with
+;; 53 bits of random data, necessitating 2 calls to the generator.
 (define fprand
-  (foreign-lambda* double ()
-    "return(freebsd_random() / (BSD_RAND_MAX + 1.0));"))
+  (foreign-lambda* double () #<<EOF
+    C_s64 L = ((C_s64)freebsd_random() << 31) | (C_s64)freebsd_random();
+    L &= 0x1fffffffffffffLL;        /* in theory we should use INT64_C(0x...) */
+
+#ifdef DEBUG_RAND
+    double d = L / 9007199254740992.0;
+    printf("%016llx %20lld\n", L, L);
+    printf("%016llx %20lld\n", *(C_s64 *)(&d), (C_s64)(d*9007199254740992.0));
+#endif
+    return(L / 9007199254740992.0);
+EOF
+))
+
 (define random-real fprand)
 
 ;; % might be ok too
 ;;(foreign-declare "#define fxrandom(n) C_fix((C_unfix(n) * (freebsd_random() / (BSD_RAND_MAX + 1.0))))")
+;; Lowlevel fixnum generator.  Only notable thing is that on 64-bit, when more than
+;; 31 bits are required (i.e. N is larger than 2^31) the result is scaled using a double
+;; populated with 53 bits of random data.
 (foreign-declare #<<EOF
 C_inline C_word fxrandom(C_word n) {
 #ifdef C_SIXTY_FOUR
@@ -54,10 +70,10 @@ C_inline C_word fxrandom(C_word n) {
     long L = (freebsd_random() << 31) | freebsd_random();
     L &= 0x1fffffffffffffL;               /* 53 bits */
     double d = L / 9007199254740992.0;    /* 2^53 */
-/*
+#ifdef DEBUG_RAND
     printf("%016lx %20ld\n", L, L);
     printf("%016lx %20ld\n", *(unsigned long *)(&d), (long)(d*9007199254740992.0));
-*/
+#endif
     return C_fix(i * d);
   } else
 #endif
