@@ -45,7 +45,26 @@ EOF
 (define random-real fprand)
 
 ;; % might be ok too
-(foreign-declare "#define fxrandom(n) C_fix((C_unfix(n) * (freebsd_random() / (BSD_RAND_MAX + 1.0))))")
+;;(foreign-declare "#define fxrandom(n) C_fix((C_unfix(n) * (freebsd_random() / (BSD_RAND_MAX + 1.0))))")
+(foreign-declare #<<EOF
+C_inline C_word fxrandom(C_word n) {
+#ifdef C_SIXTY_FOUR
+  C_word i = C_unfix(n);
+  if (i >= (1L<<31)) {
+    long L = (freebsd_random() << 31) | freebsd_random();
+    L &= 0x1fffffffffffffL;
+    double d = L / 9007199254740992.0;
+/*
+    printf("%016lx %20ld\n", L, L);
+    printf("%016lx %20ld\n", *(unsigned long *)(&d), (long)(d*9007199254740992.0));
+*/
+    return C_fix(i * d);
+  } else
+#endif
+  return C_fix((C_unfix(n) * (freebsd_random() / (BSD_RAND_MAX + 1.0))));
+}
+EOF
+)
 
 ;; Only allow exact input, like core random; however, full fixnum
 ;; range is permitted here on 64 bit platforms (still with 31-bit precision).
