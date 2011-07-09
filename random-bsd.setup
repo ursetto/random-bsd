@@ -5,4 +5,4 @@
 (install-extension
  'random-bsd
  '("random-bsd.so" "random-bsd.import.so")
- '((version "0.1")))
+ '((version "0.2")))
