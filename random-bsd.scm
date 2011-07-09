@@ -52,8 +52,8 @@ C_inline C_word fxrandom(C_word n) {
   C_word i = C_unfix(n);
   if (i >= (1L<<31)) {
     long L = (freebsd_random() << 31) | freebsd_random();
-    L &= 0x1fffffffffffffL;
-    double d = L / 9007199254740992.0;
+    L &= 0x1fffffffffffffL;               /* 53 bits */
+    double d = L / 9007199254740992.0;    /* 2^53 */
 /*
     printf("%016lx %20ld\n", L, L);
     printf("%016lx %20ld\n", *(unsigned long *)(&d), (long)(d*9007199254740992.0));
@@ -66,8 +66,8 @@ C_inline C_word fxrandom(C_word n) {
 EOF
 )
 
-;; Only allow exact input, like core random; however, full fixnum
-;; range is permitted here on 64 bit platforms (still with 31-bit precision).
+;; Only allow exact input, like core random; however, full 62-bit fixnum
+;; range is permitted here on 64 bit platforms (with 53-bit precision).
 ;; Note that as 2^30 is invalid on 32-bit, the range is 0..2^30-2 there.
 ;; This might hint that fxrand should return 0..2^30-1.
 (define (random-fixnum n)
@@ -75,20 +75,21 @@ EOF
   (##core#inline "fxrandom" n))
 (define random random-fixnum)
 
-;; Allow use of full 31-bit precision on 32-bit systems with up to a 52-bit range,
-;; as this accepts and returns flonums.  On 64-bit this is worse than fxrandom so
-;; that could theoretically be called directly (might need feature-test egg).
-(define random-integer/32
-  (foreign-lambda* number ((number n))  ;; NB: we can't avoid unnecessary modf() in number return conversion
-    "return(trunc(n * (freebsd_random() / (BSD_RAND_MAX + 1.0))));"))
+;; Generate an integer in range [0..N-1] where N is an inexact integer (flonum),
+;; and returns a flonum.  This is used when N is outside of fixnum range.
+(define (random-inexact-integer n)
+  (fptruncate (fp* n (fprand))))
 
+;; Generate random integer in range [0..N-1].  N may be a fixnum or flonum;
+;; when a flonum, an integer flonum with 31-bit precision is returned.
+;; Does not attempt to coerce flonums to fixnums even when they fit.
 (define random-integer
-  (if (##sys#fudge 3) ;; #t == 64-bit; this should be tested at compile time, but no feature available
-      random-fixnum
-      (lambda (n)
-        (if (exact? n)
-            (random-fixnum n)
-            (random-integer/32 n)))))
+  (lambda (n)
+    (if (exact? n)
+        (random-fixnum n)
+        (if (integer? n)        ;; nb: anything over 2^47 is always an integer
+            (random-inexact-integer n)
+            (error 'random-integer "argument must be an integer" n)))))
 
 ;; fxrand disabled.  On 64-bit system we can use entire 31-bit
 ;; precision, but on 32-bit system we get undefined behavior
