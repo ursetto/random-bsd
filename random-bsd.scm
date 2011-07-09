@@ -78,9 +78,17 @@ EOF
 ;; Allow use of full 31-bit precision on 32-bit systems with up to a 52-bit range,
 ;; as this accepts and returns flonums.  On 64-bit this is worse than fxrandom so
 ;; that could theoretically be called directly (might need feature-test egg).
-(define random-integer
+(define random-integer/32
   (foreign-lambda* number ((number n))  ;; NB: we can't avoid unnecessary modf() in number return conversion
     "return(trunc(n * (freebsd_random() / (BSD_RAND_MAX + 1.0))));"))
+
+(define random-integer
+  (if (##sys#fudge 3) ;; #t == 64-bit; this should be tested at compile time, but no feature available
+      random-fixnum
+      (lambda (n)
+        (if (exact? n)
+            (random-fixnum n)
+            (random-integer/32 n)))))
 
 ;; fxrand disabled.  On 64-bit system we can use entire 31-bit
 ;; precision, but on 32-bit system we get undefined behavior
